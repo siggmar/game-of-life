@@ -12,7 +12,6 @@ typedef enum { DEAD = 0, ALIVE } States;
 int front_buf[ROWS][COLS] = {0}; // last
 int back_buf[ROWS][COLS] = {0};  // next
 
-int step_c = 0;
 
 void display(void);
 void step(void);
