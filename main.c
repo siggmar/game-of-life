@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +7,9 @@
 
 int ROWS = 8;
 int COLS = 16;
+
+float SIM_SPEED = 0.1;
+bool randomize;
 
 typedef enum { DEAD = 0, ALIVE } States;
 
@@ -22,18 +26,13 @@ void step(void);
 int get_neboures(int center_y, int center_x);
 void randomize_grid(void);
 
+int parse_args(int argc, char *argv[]);
+
 int main(int argc, char *argv[])
 {
-    int opt;
-
-    while ((opt = getopt(argc, argv, ":w:h:r")) != -1) {
-        switch (opt) {
-        case 'w': printf("option: %c value: %s\n", opt, optarg); break;
-        case 'h': printf("option: %c value: %s\n", opt, optarg); break;
-        case 'r': printf("option: %c\n", opt); break;
-        case ':': printf("option: -%c needs value\n", opt); break;
-        case '?': printf("unknown option: %c\n", optopt); break;
-        }
+    int result = parse_args(argc, argv);
+    if (result != 0) {
+        return result;
     }
 
     // Glider:
@@ -55,14 +54,15 @@ int main(int argc, char *argv[])
     // front_buf[4][3] = 1;
 
     init_grid();
-    randomize_grid();
+
+    if (randomize) randomize_grid();
 
     for (;;) {
         display();
         step();
         memcpy(front_buf, back_buf, sizeof(int) * ROWS * COLS);
         printf("\033[%dA\033[%dD", ROWS, COLS);
-        usleep(100 * 1000);
+        usleep(1000 * SIM_SPEED * 1000);
     }
 
     deinit_grid();
@@ -142,4 +142,53 @@ void randomize_grid(void)
             }
         }
     }
+}
+
+int parse_args(int argc, char *argv[])
+{
+    int opt;
+
+    while ((opt = getopt(argc, argv, ":r:c:s:gh")) != -1) {
+        switch (opt) {
+        case 'r':
+            ROWS = strtol(optarg, NULL, 10);
+            if (ROWS <= 0) {
+                fprintf(stderr, "Invalid number of rows: %s\n", optarg);
+                return -1;
+            }
+            break;
+        case 'c':
+            COLS = strtol(optarg, NULL, 10);
+            if (COLS <= 0) {
+                fprintf(stderr, "Invalid number of COLS: %s\n", optarg);
+                return -1;
+            }
+
+            break;
+        case 's':
+            SIM_SPEED = strtod(optarg, NULL);
+            if (SIM_SPEED <= 0) {
+                fprintf(stderr, "Invalid simulation speed: %s\n", optarg);
+                return -1;
+            }
+
+            break;
+        case 'g': randomize = true; break;
+        case 'h':
+            printf(
+                "usage: main.c [-h] [-r <n>] \n\n"
+                "optional arguments: \n\t "
+                "-h,\tshow this help message and exit \n\t "
+                "-r <optarg>,\tchange rows to <optarg> \n\t "
+                "-c <optarg>,\tchange cols to <optarg> \n\t "
+                "-s <optarg>,\tchange simulation speed to <optarg> seconds "
+                "\n\t "
+                "-g,\trandomize grid \n"
+            );
+            return -1;
+        case ':': printf("option -%c requires value\n", optopt); return -1;
+        case '?': printf("unknown option: -%c\n", optopt); return -1;
+        }
+    }
+    return 0;
 }
