@@ -22,8 +22,20 @@ void step(void);
 int get_neboures(int center_y, int center_x);
 void randomize_grid(void);
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    int opt;
+
+    while ((opt = getopt(argc, argv, ":w:h:r")) != -1) {
+        switch (opt) {
+        case 'w': printf("option: %c value: %s\n", opt, optarg); break;
+        case 'h': printf("option: %c value: %s\n", opt, optarg); break;
+        case 'r': printf("option: %c\n", opt); break;
+        case ':': printf("option: -%c needs value\n", opt); break;
+        case '?': printf("unknown option: %c\n", optopt); break;
+        }
+    }
+
     // Glider:
     // front_buf[0][1] = 1;
     // front_buf[1][2] = 1;
