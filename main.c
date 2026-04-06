@@ -4,14 +4,18 @@
 #include <time.h>
 #include <unistd.h>
 
-#define ROWS 44
-#define COLS 132
+int ROWS = 8;
+int COLS = 16;
 
 typedef enum { DEAD = 0, ALIVE } States;
 
-int front_buf[ROWS][COLS] = {0}; // last
-int back_buf[ROWS][COLS] = {0};  // next
+#define CELL(g, y, x) g[(y * COLS + x)]
 
+int *front_buf; // last
+int *back_buf;  // next
+
+void init_grid(void);
+void deinit_grid(void);
 
 void display(void);
 void step(void);
@@ -38,24 +42,38 @@ int main(void)
     // front_buf[3][3] = 1;
     // front_buf[4][3] = 1;
 
+    init_grid();
     randomize_grid();
 
     for (;;) {
         display();
         step();
-        memcpy(front_buf, back_buf, sizeof(front_buf));
+        memcpy(front_buf, back_buf, sizeof(int) * ROWS * COLS);
         printf("\033[%dA\033[%dD", ROWS, COLS);
         usleep(100 * 1000);
     }
 
+    deinit_grid();
     return 0;
+}
+
+void init_grid(void)
+{
+    front_buf = malloc(ROWS * COLS * sizeof(int));
+    back_buf = malloc(ROWS * COLS * sizeof(int));
+}
+
+void deinit_grid(void)
+{
+    free(front_buf);
+    free(back_buf);
 }
 
 void display(void)
 {
     for (int y = 0; y < ROWS; y++) {
         for (int x = 0; x < COLS; x++) {
-            if (front_buf[y][x] == ALIVE)
+            if (CELL(front_buf, y, x) == ALIVE)
                 printf("#");
             else
                 printf(".");
@@ -70,10 +88,10 @@ void step(void)
         for (int x = 0; x < COLS; x++) {
             int neboures = get_neboures(y, x);
 
-            if (front_buf[y][x] == ALIVE) {
-                back_buf[y][x] = (neboures == 2 || neboures == 3);
+            if (CELL(front_buf, y, x) == ALIVE) {
+                CELL(back_buf, y, x) = (neboures == 2 || neboures == 3);
             } else {
-                back_buf[y][x] = (neboures == 3);
+                CELL(back_buf, y, x) = (neboures == 3);
             }
         }
     }
@@ -94,7 +112,7 @@ int get_neboures(int center_y, int center_x)
                 int x = mod(center_x + dx, COLS);
                 int y = mod(center_y + dy, ROWS);
 
-                if (front_buf[y][x] == ALIVE) neboures += 1;
+                if (CELL(front_buf, y, x) == ALIVE) neboures += 1;
             }
         }
     }
@@ -108,7 +126,7 @@ void randomize_grid(void)
     for (int y = 0; y < ROWS; y++) {
         for (int x = 0; x < COLS; x++) {
             if (rand() % 100 >= 50) {
-                front_buf[y][x] = ALIVE;
+                CELL(front_buf, y, x) = ALIVE;
             }
         }
     }
