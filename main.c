@@ -5,15 +5,17 @@
 #include <time.h>
 #include <unistd.h>
 
-int ROWS = 8;
-int COLS = 16;
+#include <ncurses.h>
+
+int grid_rows = 8;
+int grid_cols = 16;
 
 float SIM_SPEED = 0.1;
 bool randomize;
 
 typedef enum { DEAD = 0, ALIVE } States;
 
-#define CELL(g, y, x) g[(y * COLS + x)]
+#define CELL(b, y, x) b[(y * grid_cols + x)]
 
 int *front_buf; // last
 int *back_buf;  // next
@@ -53,6 +55,10 @@ int main(int argc, char *argv[])
     // front_buf[3][3] = 1;
     // front_buf[4][3] = 1;
 
+    initscr();
+    noecho();
+    curs_set(0);
+
     init_grid();
 
     if (randomize) randomize_grid();
@@ -60,19 +66,23 @@ int main(int argc, char *argv[])
     for (;;) {
         display();
         step();
-        memcpy(front_buf, back_buf, sizeof(int) * ROWS * COLS);
-        printf("\033[%dA\033[%dD", ROWS, COLS);
+        memcpy(front_buf, back_buf, sizeof(int) * grid_rows * grid_cols);
+
         usleep(1000 * SIM_SPEED * 1000);
     }
 
+    getch();
+
     deinit_grid();
+    endwin();
+
     return 0;
 }
 
 void init_grid(void)
 {
-    front_buf = malloc(ROWS * COLS * sizeof(int));
-    back_buf = malloc(ROWS * COLS * sizeof(int));
+    front_buf = malloc(grid_rows * grid_cols * sizeof(int));
+    back_buf = malloc(grid_rows * grid_cols * sizeof(int));
 }
 
 void deinit_grid(void)
@@ -83,21 +93,22 @@ void deinit_grid(void)
 
 void display(void)
 {
-    for (int y = 0; y < ROWS; y++) {
-        for (int x = 0; x < COLS; x++) {
+    erase();
+    for (int y = 0; y < grid_rows; y++) {
+        for (int x = 0; x < grid_cols; x++) {
             if (CELL(front_buf, y, x) == ALIVE)
-                printf("#");
+                mvaddch(y, x, '#');
             else
-                printf(".");
+                mvaddch(y, x, '.');
         }
-        printf("\n");
     }
+    refresh();
 }
 
 void step(void)
 {
-    for (int y = 0; y < ROWS; y++) {
-        for (int x = 0; x < COLS; x++) {
+    for (int y = 0; y < grid_rows; y++) {
+        for (int x = 0; x < grid_cols; x++) {
             int neboures = get_neboures(y, x);
 
             if (CELL(front_buf, y, x) == ALIVE) {
@@ -121,8 +132,8 @@ int get_neboures(int center_y, int center_x)
     for (int dy = -1; dy <= 1; dy++) {
         for (int dx = -1; dx <= 1; dx++) {
             if (!(dy == 0 && dx == 0)) {
-                int x = mod(center_x + dx, COLS);
-                int y = mod(center_y + dy, ROWS);
+                int x = mod(center_x + dx, grid_cols);
+                int y = mod(center_y + dy, grid_rows);
 
                 if (CELL(front_buf, y, x) == ALIVE) neboures += 1;
             }
@@ -135,8 +146,8 @@ void randomize_grid(void)
 {
     srand(time(NULL));
 
-    for (int y = 0; y < ROWS; y++) {
-        for (int x = 0; x < COLS; x++) {
+    for (int y = 0; y < grid_rows; y++) {
+        for (int x = 0; x < grid_cols; x++) {
             if (rand() % 100 >= 50) {
                 CELL(front_buf, y, x) = ALIVE;
             }
@@ -151,15 +162,15 @@ int parse_args(int argc, char *argv[])
     while ((opt = getopt(argc, argv, ":r:c:s:gh")) != -1) {
         switch (opt) {
         case 'r':
-            ROWS = strtol(optarg, NULL, 10);
-            if (ROWS <= 0) {
+            grid_rows = strtol(optarg, NULL, 10);
+            if (grid_rows <= 0) {
                 fprintf(stderr, "Invalid number of rows: %s\n", optarg);
                 return -1;
             }
             break;
         case 'c':
-            COLS = strtol(optarg, NULL, 10);
-            if (COLS <= 0) {
+            grid_cols = strtol(optarg, NULL, 10);
+            if (grid_cols <= 0) {
                 fprintf(stderr, "Invalid number of COLS: %s\n", optarg);
                 return -1;
             }
