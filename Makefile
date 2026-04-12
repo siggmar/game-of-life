@@ -1,6 +1,10 @@
+CC = gcc
+CFLAGS = -Wall -Wextra
+LDFLAGS = -lncurses
+
 
 main: main.c
-	gcc main.c -o main
+	$(CC) main.c -o main $(CFLAGS) $(LDFLAGS)
 
 run: main
 	./main
