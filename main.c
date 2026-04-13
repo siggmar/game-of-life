@@ -235,7 +235,6 @@ void handle_input(int ch)
     case KEY_UP:
         grid_rows -= 1;
         resize_buf();
-        printw("pressed UP \n");
         break;
     case KEY_DOWN:
         grid_rows += 1;
