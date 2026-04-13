@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,7 @@ int *back_buf;  // next
 
 void init_grid(void);
 void deinit_grid(void);
+void reset_grid(void);
 
 void display(void);
 void step(void);
@@ -29,6 +31,10 @@ int get_neboures(int center_y, int center_x);
 void randomize_grid(void);
 
 int parse_args(int argc, char *argv[]);
+
+void handle_input(int ch);
+
+void resize_buf();
 
 int main(int argc, char *argv[])
 {
@@ -57,21 +63,27 @@ int main(int argc, char *argv[])
 
     initscr();
     noecho();
+    nodelay(stdscr, TRUE); // no getch delay
+    keypad(stdscr, TRUE);
     curs_set(0);
 
     init_grid();
 
     if (randomize) randomize_grid();
 
-    for (;;) {
+    int ch;
+
+    while ((ch = getch()) != 'q') {
+        handle_input(ch);
+        flushinp(); // flush ch buffer, usleep will cause bugs without it
         display();
         step();
         memcpy(front_buf, back_buf, sizeof(int) * grid_rows * grid_cols);
 
-        usleep(1000 * SIM_SPEED * 1000);
-    }
+        timeout(SIM_SPEED * 1000);
 
-    getch();
+        // usleep(1000 * SIM_SPEED * 1000);
+    }
 
     deinit_grid();
     endwin();
@@ -89,6 +101,12 @@ void deinit_grid(void)
 {
     free(front_buf);
     free(back_buf);
+}
+
+void reset_grid(void)
+{
+    memset(front_buf, 0, grid_rows * grid_cols * sizeof(int));
+    memset(back_buf, 0, grid_rows * grid_cols * sizeof(int));
 }
 
 void display(void)
@@ -202,4 +220,41 @@ int parse_args(int argc, char *argv[])
         }
     }
     return 0;
+}
+
+void handle_input(int ch)
+{
+    switch (ch) {
+    case '+': SIM_SPEED -= 0.1; break;
+    case '-': SIM_SPEED += 0.1; break;
+    case 'r': reset_grid(); break;
+    case 'R': randomize_grid(); break;
+
+    case KEY_UP:
+        grid_rows -= 1;
+        resize_buf();
+        printw("pressed UP \n");
+        break;
+    case KEY_DOWN:
+        grid_rows += 1;
+        resize_buf();
+        break;
+    case KEY_LEFT:
+        grid_cols -= 1;
+        resize_buf();
+        break;
+    case KEY_RIGHT:
+        grid_cols += 1;
+        resize_buf();
+        break;
+    }
+}
+
+void resize_buf()
+{
+    front_buf = realloc(front_buf, grid_rows * grid_cols * sizeof(int));
+    back_buf = realloc(back_buf, grid_rows * grid_cols * sizeof(int));
+
+    assert(front_buf != NULL);
+    assert(back_buf != NULL);
 }
