@@ -44,24 +44,6 @@ int main(int argc, char *argv[])
         return result;
     }
 
-    // Glider:
-    // front_buf[0][1] = 1;
-    // front_buf[1][2] = 1;
-    // front_buf[2][0] = 1;
-    // front_buf[2][1] = 1;
-    // front_buf[2][2] = 1;
-
-    // sidways L
-    // front_buf[0][0] = 1;
-    // front_buf[0][1] = 1;
-    // front_buf[0][2] = 1;
-    // front_buf[1][0] = 1;
-
-    // Line
-    // front_buf[2][3] = 1;
-    // front_buf[3][3] = 1;
-    // front_buf[4][3] = 1;
-
     initscr();
     noecho();
     nodelay(stdscr, TRUE); // no getch delay
@@ -83,8 +65,6 @@ int main(int argc, char *argv[])
         memcpy(front_buf, back_buf, sizeof(int) * grid_rows * grid_cols);
 
         timeout(SIM_SPEED * 1000);
-
-        // usleep(1000 * SIM_SPEED * 1000);
     }
 
     deinit_grid();
