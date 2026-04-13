@@ -26,6 +26,7 @@ void deinit_grid(void);
 void reset_grid(void);
 
 void display(void);
+void display_stats(void);
 void step(void);
 int get_neboures(int center_y, int center_x);
 void randomize_grid(void);
@@ -77,6 +78,7 @@ int main(int argc, char *argv[])
         handle_input(ch);
         flushinp(); // flush ch buffer, usleep will cause bugs without it
         display();
+        display_stats();
         step();
         memcpy(front_buf, back_buf, sizeof(int) * grid_rows * grid_cols);
 
@@ -257,4 +259,14 @@ void resize_buf()
 
     assert(front_buf != NULL);
     assert(back_buf != NULL);
+}
+
+void display_stats(void)
+{
+    int stats_space = 10;
+    mvprintw(0, grid_cols + stats_space, "Simulation Speed: %f", SIM_SPEED);
+    mvprintw(1, grid_cols + stats_space, "Grid Rows: %d", grid_rows);
+    mvprintw(2, grid_cols + stats_space, "Grid Cols: %d", grid_cols);
+
+    refresh();
 }
